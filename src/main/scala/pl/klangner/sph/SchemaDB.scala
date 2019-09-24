@@ -5,6 +5,10 @@ import java.util.concurrent.ConcurrentMap
 import org.mapdb.{DBMaker, Serializer}
 
 
+/**
+  * This class uses DBMaker for storing schemas.
+  * In real case scenario it will be probably some database relational or NoSQL
+  */
 class SchemaDB(filePath: String = "") {
 
   private lazy val db = {

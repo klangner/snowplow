@@ -3,7 +3,7 @@ package pl.klangner.sph
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.marshallers.sprayjson.SprayJsonSupport
-import akka.http.scaladsl.model.{HttpEntity, HttpResponse, MediaTypes, StatusCodes}
+import akka.http.scaladsl.model.{HttpEntity, HttpResponse, MediaTypes, StatusCode, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Route, StandardRoute}
 import akka.stream.ActorMaterializer
@@ -61,14 +61,15 @@ object MainApp extends SprayJsonSupport with DefaultJsonProtocol {
   def postSchema(db: SchemaDB, id: String, schema: String): StandardRoute = {
     val jsonTry = Try(schema.parseJson)
 
-    val response = if (jsonTry.isSuccess) {
+    if (jsonTry.isSuccess) {
       db.put(id, schema)
-      ApiResponse("uploadSchema", id, "success", "")
+      val response = ApiResponse("uploadSchema", id, "success", "")
+      complete(HttpResponse(StatusCodes.Created, entity = asHttpEntity(response)))
     } else {
-      ApiResponse("uploadSchema", id, "error", "Invalid JSON")
+      val response = ApiResponse("uploadSchema", id, "error", "Invalid JSON")
+      complete(HttpResponse(StatusCodes.BadRequest, entity = asHttpEntity(response)))
     }
 
-    completeResponse(response)
   }
 
   def getSchema(db: SchemaDB, id: String): StandardRoute  = {
@@ -81,22 +82,24 @@ object MainApp extends SprayJsonSupport with DefaultJsonProtocol {
   }
 
   def validateDocument(db: SchemaDB, schemaId: String, doc: String): StandardRoute = {
-    val response = db.fetch(schemaId).map { schema =>
+    db.fetch(schemaId).map { schema =>
       validateWithSchema(schema, doc) match {
-        case Left(msg) => ApiResponse("validateDocument", schemaId, "error", msg)
-        case Right(_) => ApiResponse("validateDocument", schemaId, "success","")
+        case Left(msg) =>
+          val response = ApiResponse("validateDocument", schemaId, "error", msg)
+          complete(HttpResponse(StatusCodes.OK, entity = asHttpEntity(response)))
+        case Right(_) =>
+          val response = ApiResponse("validateDocument", schemaId, "success","")
+          complete(HttpResponse(StatusCodes.OK, entity = asHttpEntity(response)))
       }
 
-    }.getOrElse(ApiResponse("validateDocument", schemaId, "error", "Schema not found"))
-    completeResponse(response)
+    }.getOrElse {
+      val response = ApiResponse("validateDocument", schemaId, "error", "Schema not found")
+      complete(HttpResponse(StatusCodes.NotFound, entity = asHttpEntity(response)))
+    }
   }
 
-  def completeResponse(response: ApiResponse): StandardRoute = {
-    complete(HttpResponse(
-      StatusCodes.OK,
-      entity = HttpEntity(MediaTypes.`application/json`, response.toJson.compactPrint)
-    ))
-  }
+  def asHttpEntity(response: ApiResponse) = HttpEntity(MediaTypes.`application/json`, response.toJson.compactPrint)
+
 
   /**
     * Validate given document against schema.

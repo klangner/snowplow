@@ -117,14 +117,14 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
 
     "upload valid schema" in {
       uploadSchemaRequest(configSchema) ~> mainRoute() ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
     }
 
     "return error id upload schema is not valid" in {
       uploadSchemaRequest("not json") ~> mainRoute() ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.BadRequest
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "error", "Invalid JSON")
       }
     }
@@ -133,7 +133,7 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
       val route = mainRoute()
       val expected = configSchema.parseJson
       uploadSchemaRequest(configSchema) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
       Get("/schema/1") ~> route ~> check {
@@ -152,7 +152,7 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
     "validate correct document" in {
       val route = mainRoute()
       uploadSchemaRequest(configSchema) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
 
@@ -165,7 +165,7 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
     "clean document" in {
       val route = mainRoute()
       uploadSchemaRequest(configSchema) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
 
@@ -178,12 +178,12 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
     "not validate wrong schema" in {
       val route = mainRoute()
       uploadSchemaRequest(configSchema) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
 
       uploadDocument(correctDoc, "no-id") ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.NotFound
         responseAs[ApiResponse] shouldEqual ApiResponse("validateDocument", "no-id", "error", "Schema not found")
       }
     }
@@ -191,7 +191,7 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
     "not validate wrong document" in {
       val route = mainRoute()
       uploadSchemaRequest(configSchema) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
 
@@ -207,7 +207,7 @@ class RestApiTest extends WordSpec with Matchers with ScalatestRouteTest with Sp
     "not validate wrong json" in {
       val route = mainRoute()
       uploadSchemaRequest(configSchema) ~> route ~> check {
-        status shouldEqual StatusCodes.OK
+        status shouldEqual StatusCodes.Created
         responseAs[ApiResponse] shouldEqual ApiResponse("uploadSchema", "1", "success", "")
       }
 
